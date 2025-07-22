@@ -1,0 +1,132 @@
+{
+  "global": [
+    "gmail.com",
+    "yahoo.com",
+    "outlook.com",
+    "hotmail.com",
+    "icloud.com",
+    "aol.com",
+    "mail.com",
+    "protonmail.com",
+    "zoho.com",
+    "yandex.com",
+    "gmx.com"
+  ],
+  "mexico": [
+    "gmail.com",
+    "hotmail.com",
+    "yahoo.com",
+    "prodigy.net.mx",
+    "live.com"
+  ],
+  "spain": [
+    "gmail.com",
+    "hotmail.com",
+    "yahoo.es",
+    "terra.es",
+    "telefonica.net"
+  ],
+  "argentina": [
+    "gmail.com",
+    "hotmail.com",
+    "yahoo.com",
+    "fibertel.com.ar"
+  ],
+  "brazil": [
+    "gmail.com",
+    "hotmail.com",
+    "uol.com.br",
+    "bol.com.br",
+    "outlook.com"
+  ],
+  "russia": [
+    "gmail.com",
+    "yandex.ru",
+    "mail.ru",
+    "bk.ru"
+  ],
+  "japan": [
+    "gmail.com",
+    "yahoo.co.jp",
+    "docomo.ne.jp",
+    "ezweb.ne.jp",
+    "softbank.ne.jp"
+  ],
+  "france": [
+    "gmail.com",
+    "orange.fr",
+    "hotmail.fr",
+    "laposte.net",
+    "yahoo.fr"
+  ],
+  "germany": [
+    "gmail.com",
+    "web.de",
+    "gmx.de",
+    "hotmail.de",
+    "t-online.de"
+  ],
+  "india": [
+    "gmail.com",
+    "rediffmail.com",
+    "yahoo.in",
+    "outlook.com",
+    "hotmail.com"
+  ],
+  "china": [
+    "gmail.com",
+    "qq.com",
+    "163.com",
+    "126.com",
+    "sina.com"
+  ],
+  "uk": [
+    "gmail.com",
+    "hotmail.co.uk",
+    "yahoo.co.uk",
+    "btinternet.com",
+    "live.co.uk"
+  ],
+  "canada": [
+    "gmail.com",
+    "hotmail.com",
+    "yahoo.ca",
+    "outlook.com",
+    "icloud.com"
+  ],
+  "italy": [
+    "gmail.com",
+    "hotmail.it",
+    "libero.it",
+    "virgilio.it",
+    "alice.it"
+  ],
+  "australia": [
+    "gmail.com",
+    "hotmail.com",
+    "yahoo.com.au",
+    "outlook.com",
+    "bigpond.com"
+  ],
+  "south_africa": [
+    "gmail.com",
+    "hotmail.com",
+    "yahoo.co.za",
+    "outlook.com",
+    "mweb.co.za"
+  ],
+  "netherlands": [
+    "gmail.com",
+    "hotmail.com",
+    "ziggo.nl",
+    "kpnmail.nl",
+    "outlook.com"
+  ],
+  "sweden": [
+    "gmail.com",
+    "hotmail.com",
+    "telia.com",
+    "outlook.com",
+    "spray.se"
+  ]
+}
