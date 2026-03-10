@@ -22,7 +22,7 @@ exports.register = async (req, res) => {
     await nuevoUsuario.save();
 
     res.status(201).json({ msg: "Usuario creado correctamente" });
-   // console.log("Nuevo usuario registrado:", nuevoUsuario._id);
+    // console.log("Nuevo usuario registrado:", nuevoUsuario._id);
   } catch (err) {
     //console.error("Error al registrar usuario:", err);
     res.status(500).json({ msg: "Error en el servidor" });
@@ -47,7 +47,7 @@ exports.login = async (req, res) => {
     res.json({ token, usuario });
     //console.log("Usuario autenticado:", usuario._id);
   } catch (err) {
-   // console.error("Error al iniciar sesión:", err);
+    // console.error("Error al iniciar sesión:", err);
     res.status(500).json({ msg: "Error al iniciar sesión" });
   }
 };
@@ -57,9 +57,9 @@ exports.getProfile = async (req, res) => {
   try {
     const usuario = await User.findById(req.user.id).select("-password");
     res.json(usuario);
-   // console.log("Perfil obtenido:", usuario);
+    // console.log("Perfil obtenido:", usuario);
   } catch (err) {
-   // console.error("Error al obtener perfil:", err);
+    // console.error("Error al obtener perfil:", err);
     res.status(500).json({ msg: "Error al obtener perfil" });
   }
 };
@@ -75,9 +75,9 @@ exports.updateUser = async (req, res) => {
 
     const usuario = await User.findByIdAndUpdate(req.user.id, datos, { new: true });
     res.json(usuario);
-   // console.log("Usuario actualizado:", usuario);
+    // console.log("Usuario actualizado:", usuario);
   } catch (err) {
-   // console.error("Error al actualizar usuario:", err);
+    // console.error("Error al actualizar usuario:", err);
     res.status(500).json({ msg: "Error al actualizar usuario" });
   }
 };
@@ -95,9 +95,9 @@ exports.deleteUser = async (req, res) => {
 
     await User.findByIdAndDelete(req.user.id);
     res.json({ msg: "Usuario eliminado" });
-   // console.log("Usuario eliminado:", req.user.id);
+    // console.log("Usuario eliminado:", req.user.id);
   } catch (err) {
-   // console.error("Error al eliminar usuario:", err);
+    // console.error("Error al eliminar usuario:", err);
     res.status(500).json({ msg: "Error al eliminar usuario" });
   }
 };
@@ -110,7 +110,7 @@ exports.buscarUsuarios = async (req, res) => {
     const usuarioId = req.user._id;
 
     if (!search || !search.trim()) {
-     // console.log("Parámetro 'search' no proporcionado");
+      // console.log("Parámetro 'search' no proporcionado");
       return res.status(400).json({ message: "El parámetro 'search' es obligatorio" });
     }
 
@@ -120,8 +120,8 @@ exports.buscarUsuarios = async (req, res) => {
 
     const usuarios = await User.find({
       $and: [
-        { _id: { $ne: usuarioId } }, 
-        { _id: { $nin: usuarioActual.bloqueados } }, 
+        { _id: { $ne: usuarioId } },
+        { _id: { $nin: usuarioActual.bloqueados } },
         {
           $or: [
             { nombre: regex },
@@ -133,9 +133,9 @@ exports.buscarUsuarios = async (req, res) => {
     }).select("_id nombre email username fotoPerfil");
 
     res.json(usuarios);
-   // console.log("Usuarios encontrados:", usuarios);
+    // console.log("Usuarios encontrados:", usuarios);
   } catch (error) {
-   // console.error("Error en buscarUsuarios:", error);
+    // console.error("Error en buscarUsuarios:", error);
     res.status(500).json({ message: "Error del servidor" });
   }
 };
@@ -147,7 +147,7 @@ exports.buscarUsuarios = async (req, res) => {
 exports.userSearch = async (req, res) => {
   try {
     const { search } = req.query;
-    const userId = req.user?.id; 
+    const userId = req.user?.id;
 
     if (!search || search.trim() === "") {
       return res.status(400).json({ message: "Debe proporcionar un término de búsqueda." });
@@ -160,14 +160,14 @@ exports.userSearch = async (req, res) => {
     const usuarios = await User.find({
       $or: [{ nombre: regex }, { username: regex }],
       _id: {
-        $nin: [...usuarioActual.bloqueados, userId], 
+        $nin: [...usuarioActual.bloqueados, userId],
       },
     }).select("nombre username fotoPerfil");
 
     res.json(usuarios);
     // console.log("Usuarios encontrados:", usuarios);
   } catch (error) {
-   // console.error("Error buscando usuarios:", error);
+    // console.error("Error buscando usuarios:", error);
     res.status(500).json({ message: "Error interno del servidor." });
   }
 };
@@ -185,11 +185,11 @@ exports.getUsers = async (req, res) => {
 
     const usuarioActual = await User.findById(userId).select("bloqueados");
 
- 
+
     const usuarios = await User.find({
-      _id: { $ne: userId }, 
+      _id: { $ne: userId },
       bloqueados: { $ne: userId },
-      _id: { $nin: usuarioActual.bloqueados }, 
+      _id: { $nin: usuarioActual.bloqueados },
     }).select("-password nombre username email fotoPerfil");
 
     res.json(usuarios);
@@ -219,7 +219,7 @@ exports.getUserById = async (req, res) => {
     }
 
     if (user._id.toString() === userId) {
-      return res.json(user); 
+      return res.json(user);
     }
 
     const bloqueadoPorUsuarioActual = usuarioActual.bloqueados
@@ -240,7 +240,7 @@ exports.getUserById = async (req, res) => {
     res.json(user);
     //console.log("Perfil de usuario obtenido:", user._id);
   } catch (error) {
-   // console.error("Error al obtener usuario por ID:", error);
+    // console.error("Error al obtener usuario por ID:", error);
     res.status(500).json({ msg: "Error del servidor." });
   }
 };
@@ -258,7 +258,7 @@ exports.getUsuariosAleatorios = async (req, res) => {
 
     const usuarioActual = await User.findById(userId).select("bloqueados");
 
-  
+
     const usuarios = await User.aggregate([
       {
         $match: {
@@ -289,13 +289,13 @@ exports.getUsuariosAleatorios = async (req, res) => {
 
 
 exports.actualizarPerfil = async (req, res) => {
-  const { nombre, passwordActual, passwordNueva } = req.body;
+  const { nombre, passwordActual, passwordNueva, bio, ubicacion, sitioWeb } = req.body;
   const userId = req.user.id;
 
   try {
     const usuario = await User.findById(userId);
     if (!usuario) {
-     // console.log(`Usuario ${userId} intentó actualizar su perfil pero no existe.`);
+      // console.log(`Usuario ${userId} intentó actualizar su perfil pero no existe.`);
       return res.status(404).json({ mensaje: 'Usuario no encontrado' });
     }
 
@@ -306,7 +306,7 @@ exports.actualizarPerfil = async (req, res) => {
       });
 
       if (!sanitizedNombre) {
-       // console.log(`Usuario ${userId} intentó actualizar su perfil con un nombre vacío.`);
+        // console.log(`Usuario ${userId} intentó actualizar su perfil con un nombre vacío.`);
         return res.status(400).json({ mensaje: 'El nombre no puede estar vacío' });
       }
 
@@ -316,7 +316,7 @@ exports.actualizarPerfil = async (req, res) => {
         (ahora - usuario.ultimaModificacionNombre) >= 15 * 24 * 60 * 60 * 1000;
 
       if (!puedeCambiarNombre) {
-       // console.log(`Usuario ${userId} intentó cambiar su nombre antes de 15 días.`);
+        // console.log(`Usuario ${userId} intentó cambiar su nombre antes de 15 días.`);
         return res.status(400).json({ mensaje: 'Solo puedes cambiar tu nombre cada 15 días' });
       }
 
@@ -335,11 +335,11 @@ exports.actualizarPerfil = async (req, res) => {
 
     if (passwordActual && passwordNueva) {
       if (passwordNueva.length < 8) {
-       // console.log(`Usuario ${userId} intentó actualizar su perfil con una contraseña corta.`);
+        // console.log(`Usuario ${userId} intentó actualizar su perfil con una contraseña corta.`);
         return res.status(400).json({ mensaje: 'La nueva contraseña debe tener al menos 8 caracteres' });
       }
       if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(passwordNueva)) {
-       // console.log(`Usuario ${userId} intentó actualizar su perfil con una contraseña débil.`);
+        // console.log(`Usuario ${userId} intentó actualizar su perfil con una contraseña débil.`);
         return res.status(400).json({
           mensaje: 'La contraseña debe incluir mayúsculas, minúsculas, números y caracteres especiales',
         });
@@ -347,15 +347,25 @@ exports.actualizarPerfil = async (req, res) => {
 
       const coincide = await bcrypt.compare(passwordActual, usuario.password);
       if (!coincide) {
-       // console.log(`Usuario ${userId} intentó actualizar su perfil con una contraseña incorrecta.`);
+        // console.log(`Usuario ${userId} intentó actualizar su perfil con una contraseña incorrecta.`);
         return res.status(401).json({ mensaje: 'Contraseña actual incorrecta' });
       }
 
       usuario.password = await bcrypt.hash(passwordNueva, 10);
     }
 
-    if (!nombre && (!passwordActual || !passwordNueva)) {
-     // console.log(`Usuario ${userId} intentó actualizar su perfil sin cambios.`);
+    if (req.body.configuracionStatus) {
+      usuario.configuracionStatus = {
+        ...usuario.configuracionStatus,
+        ...req.body.configuracionStatus
+      };
+    }
+
+    if (bio !== undefined) usuario.bio = bio;
+    if (ubicacion !== undefined) usuario.ubicacion = ubicacion;
+    if (sitioWeb !== undefined) usuario.sitioWeb = sitioWeb;
+
+    if (!nombre && (!passwordActual || !passwordNueva) && !req.body.configuracionStatus && bio === undefined && ubicacion === undefined && sitioWeb === undefined) {
       return res.status(400).json({ mensaje: 'Debes proporcionar al menos un campo para actualizar' });
     }
 
@@ -364,11 +374,15 @@ exports.actualizarPerfil = async (req, res) => {
     res.json({
       mensaje: 'Perfil actualizado correctamente',
       nombre: usuario.nombre,
+      bio: usuario.bio,
+      ubicacion: usuario.ubicacion,
+      sitioWeb: usuario.sitioWeb,
+      createdAt: usuario.createdAt
     });
 
-   // console.log('Perfil actualizado:', usuario._id);
+    // console.log('Perfil actualizado:', usuario._id);
   } catch (error) {
-   // console.error('Error actualizando perfil:', error);
+    // console.error('Error actualizando perfil:', error);
     res.status(500).json({ mensaje: 'Error interno del servidor' });
   }
 };
@@ -401,7 +415,7 @@ exports.uploadPhoto = async (req, res) => {
       height: 300,
       crop: "limit",
     });
-    
+
 
     user.fotoPerfil = result.secure_url;
     user.fotoPublicId = result.public_id;
@@ -410,7 +424,7 @@ exports.uploadPhoto = async (req, res) => {
     res.json({ fotoPerfil: user.fotoPerfil });
     //console.log("Foto de perfil subida:", user.fotoPerfil);
   } catch (error) {
-   // console.error("Error al subir la foto:", error);
+    // console.error("Error al subir la foto:", error);
     res.status(500).json({ message: "Error subiendo la foto" });
   }
 };
@@ -453,7 +467,7 @@ exports.deletePhoto = async (req, res) => {
 exports.bloquearUsuario = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { id } = req.params; 
+    const { id } = req.params;
 
     if (userId === id) {
       return res.status(400).json({ msg: "No puedes bloquearte a ti mismo." });
@@ -464,15 +478,15 @@ exports.bloquearUsuario = async (req, res) => {
     if (!user) return res.status(404).json({ msg: "Usuario no encontrado." });
 
     if (user.bloqueados.includes(id)) {
-     // console.log(`Usuario ${userId} ya bloqueó a ${id}`);
+      // console.log(`Usuario ${userId} ya bloqueó a ${id}`);
       return res.status(400).json({ msg: "Usuario ya bloqueado." });
-      }
+    }
 
     user.bloqueados.push(id);
     await user.save();
 
     res.json({ msg: "Usuario bloqueado correctamente." });
-   // console.log(`Usuario ${userId} bloqueó a ${id}`);
+    // console.log(`Usuario ${userId} bloqueó a ${id}`);
   } catch (error) {
     //console.error("Error al bloquear usuario:", error);
     res.status(500).json({ msg: "Error en el servidor." });
@@ -487,10 +501,10 @@ exports.obtenerUsuariosBloqueados = async (req, res) => {
 
     if (!user) return res.status(404).json({ msg: "Usuario no encontrado." });
 
-    res.json(user.bloqueados); 
+    res.json(user.bloqueados);
     //console.log("Usuarios bloqueados obtenidos:", user.bloqueados);
   } catch (error) {
-   // console.error("Error al obtener bloqueados:", error);
+    // console.error("Error al obtener bloqueados:", error);
     res.status(500).json({ msg: "Error en el servidor." });
   }
 };
@@ -509,7 +523,7 @@ exports.desbloquearUsuario = async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user) return res.status(404).json({ msg: "Usuario no encontrado." });
-   // console.log(`Usuario ${userId} intenta desbloquear a ${id}`);
+    // console.log(`Usuario ${userId} intenta desbloquear a ${id}`);
 
     const index = user.bloqueados.indexOf(id);
     if (index === -1) {
@@ -520,9 +534,9 @@ exports.desbloquearUsuario = async (req, res) => {
     await user.save();
 
     res.json({ msg: "Usuario desbloqueado correctamente." });
-   // console.log(`Usuario ${userId} desbloqueó a ${id}`);
+    // console.log(`Usuario ${userId} desbloqueó a ${id}`);
   } catch (error) {
-   // console.error("Error al desbloquear usuario:", error);
+    // console.error("Error al desbloquear usuario:", error);
     res.status(500).json({ msg: "Error en el servidor." });
   }
 };
@@ -585,7 +599,7 @@ exports.seguirUsuario = async (req, res) => {
     res.json({ msg: "Usuario seguido correctamente." });
 
   } catch (error) {
-   // console.error("Error al seguir usuario:", error);
+    // console.error("Error al seguir usuario:", error);
     res.status(500).json({ msg: "Error del servidor." });
   }
 };
@@ -601,7 +615,7 @@ exports.dejarDeSeguirUsuario = async (req, res) => {
     const usuarioASeguir = await User.findById(id);
 
     if (!usuarioASeguir) {
-     // console.log(`Usuario ${userId} intentó dejar de seguir a un usuario inexistente: ${id}`);
+      // console.log(`Usuario ${userId} intentó dejar de seguir a un usuario inexistente: ${id}`);
       return res.status(404).json({ msg: "Usuario no encontrado." });
     }
 
@@ -612,9 +626,9 @@ exports.dejarDeSeguirUsuario = async (req, res) => {
     await usuarioASeguir.save();
 
     res.json({ msg: "Has dejado de seguir al usuario." });
-   // console.log(`Usuario ${userId} dejó de seguir a ${id}.`);
+    // console.log(`Usuario ${userId} dejó de seguir a ${id}.`);
   } catch (error) {
-   // console.error("Error al dejar de seguir usuario:", error);
+    // console.error("Error al dejar de seguir usuario:", error);
     res.status(500).json({ msg: "Error del servidor." });
   }
 };
@@ -624,9 +638,9 @@ exports.obtenerSiguiendo = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate("siguiendo", "nombre username fotoPerfil");
     res.json(user.siguiendo);
-   // console.log("Usuarios seguidos obtenidos:", user.siguiendo);
+    // console.log("Usuarios seguidos obtenidos:", user.siguiendo);
   } catch (error) {
-   // console.error("Error obteniendo seguidos:", error);
+    // console.error("Error obteniendo seguidos:", error);
     res.status(500).json({ msg: "Error del servidor." });
   }
 };
@@ -636,9 +650,9 @@ exports.obtenerSeguidores = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate("seguidores", "nombre username fotoPerfil");
     res.json(user.seguidores);
-   // console.log("Seguidores obtenidos:", user.seguidores);
+    // console.log("Seguidores obtenidos:", user.seguidores);
   } catch (error) {
-   // console.error("Error obteniendo seguidores:", error);
+    // console.error("Error obteniendo seguidores:", error);
     res.status(500).json({ msg: "Error del servidor." });
   }
 };

@@ -20,7 +20,7 @@ exports.crearConversacion = async (req, res) => {
     });
 
     await conversacion.save();
-   // console.log("Conversación creada:", conversacion);
+    // console.log("Conversación creada:", conversacion);
 
     participantesUnicos.forEach((userId) => {
       if (userId.toString() !== req.user.id.toString()) {
@@ -30,7 +30,7 @@ exports.crearConversacion = async (req, res) => {
 
     res.status(201).json(conversacion);
   } catch (err) {
-   // console.error("Error al crear conversación:", err);
+    // console.error("Error al crear conversación:", err);
     res.status(500).json({ msg: "Error al crear conversación" });
   }
 };
@@ -40,12 +40,13 @@ exports.obtenerConversaciones = async (req, res) => {
   try {
     const conversaciones = await Conversation.find({ participantes: req.user.id })
       .populate("participantes", "nombre email fotoPerfil")
+      .populate("ultimoMensaje")
       .sort({ updatedAt: -1 });
 
     res.json(conversaciones);
-   // console.log("Conversaciones obtenidas:", conversaciones);
+    // console.log("Conversaciones obtenidas:", conversaciones);
   } catch (err) {
-   // console.error("Error al obtener conversaciones:", err);
+    // console.error("Error al obtener conversaciones:", err);
     res.status(500).json({ msg: "Error al obtener conversaciones" });
   }
 };
@@ -56,8 +57,6 @@ exports.agregarParticipante = async (req, res) => {
   try {
     const { userId } = req.body;
     const conversacion = await Conversation.findById(req.params.id);
-
-    cons
     if (!conversacion) return res.status(404).json({ msg: "Conversación no encontrada" });
 
     if (!conversacion.participantes.includes(req.user.id))
@@ -69,9 +68,9 @@ exports.agregarParticipante = async (req, res) => {
     }
 
     res.json(conversacion);
-   // console.log("Participante agregado:", userId, "a conversación:", conversacion._id);
+    // console.log("Participante agregado:", userId, "a conversación:", conversacion._id);
   } catch (err) {
-   // console.error("Error al agregar participante:", err);
+    // console.error("Error al agregar participante:", err);
     res.status(500).json({ msg: "Error al agregar participante" });
   }
 };
@@ -87,10 +86,10 @@ exports.eliminarConversacion = async (req, res) => {
       return res.status(403).json({ msg: "No autorizado" });
 
     await conversacion.deleteOne();
-   // console.log("Conversación eliminada:", conversacion._id);
+    // console.log("Conversación eliminada:", conversacion._id);
     res.json({ msg: "Conversación eliminada" });
   } catch (err) {
-   // console.error("Error al eliminar conversación:", err);
+    // console.error("Error al eliminar conversación:", err);
     res.status(500).json({ msg: "Error al eliminar conversación" });
   }
 };
@@ -104,7 +103,7 @@ exports.obtenerConversacionPorId = async (req, res) => {
       .populate("participantes", "nombre email _id");
 
     if (!conversacion) {
-     // console.warn(`⚠️ Conversación con ID ${req.params.id} no encontrada`);
+      // console.warn(`⚠️ Conversación con ID ${req.params.id} no encontrada`);
       return res.status(404).json({ msg: "No encontrada" });
     }
 

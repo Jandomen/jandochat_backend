@@ -34,6 +34,7 @@ exports.obtenerNotificaciones = async (req, res) => {
 
     const notificaciones = await Notification.find({ receptor: userId })
       .populate("emisor", "nombre fotoPerfil")
+      .populate("publicacion", "contenido")
       .sort({ createdAt: -1 });
 
     res.json(notificaciones || []);

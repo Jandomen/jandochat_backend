@@ -7,7 +7,7 @@ const User = require("../models/User");
 
 exports.crearMensaje = async (req, res) => {
   try {
-    const { contenido, conversacion } = req.body;
+    const { contenido, conversacion, media } = req.body;
     const emisorId = req.user._id;
 
     const conv = await Conversation.findById(conversacion).populate("participantes", "_id nombre bloqueados");
@@ -40,14 +40,21 @@ exports.crearMensaje = async (req, res) => {
       contenido,
       emisor: emisorId,
       conversacion,
+      media: media || [],
     });
 
     await nuevoMensaje.save();
+
+    // Actualizar la conversación con el último mensaje
+    await Conversation.findByIdAndUpdate(conversacion, {
+      ultimoMensaje: nuevoMensaje._id
+    });
+
     await nuevoMensaje.populate("emisor", "nombre email fotoPerfil");
 
     const io = req.app.get("io");
     io.to(conversacion).emit("mensaje-recibido", nuevoMensaje);
-   // console.log("📤 Mensaje enviado a la conversación:", conversacion);
+    // console.log("📤 Mensaje enviado a la conversación:", conversacion);
 
     const usuariosViendoChat = socketNotification.getUsuariosViendoChat
       ? socketNotification.getUsuariosViendoChat()
@@ -70,7 +77,7 @@ exports.crearMensaje = async (req, res) => {
       io.to(receptor._id.toString()).emit("nueva-notificacion", nuevaNotificacion);
       //log("🔔 Notificación creada y enviada a:", receptor._id.toString());
     } else {
-     // console.log("👁️ Receptor está viendo la conversación, no se envía notificación");
+      // console.log("👁️ Receptor está viendo la conversación, no se envía notificación");
     }
 
     res.status(201).json(nuevoMensaje);
@@ -89,12 +96,12 @@ exports.obtenerMensajes = async (req, res) => {
     const mensajes = await Message.find({ conversacion: conversacionId })
       .populate("emisor", "nombre email fotoPerfil")
       .sort({ createdAt: 1 });
-    
+
     res.json(mensajes);
 
-   // console.log("📥 Mensajes obtenidos para conversación:", conversacionId);
+    // console.log("📥 Mensajes obtenidos para conversación:", conversacionId);
   } catch (error) {
-   // console.error("❌ Error al obtener mensajes:", error);
+    // console.error("❌ Error al obtener mensajes:", error);
     res.status(500).json({ msg: "Error al obtener mensajes" });
   }
 };
@@ -114,7 +121,7 @@ exports.editarMensaje = async (req, res) => {
     io.to(mensaje.conversacion.toString()).emit("mensaje-editado", mensaje);
 
     res.json(mensaje);
-   // console.log("✏️ Mensaje editado:", mensaje._id);
+    // console.log("✏️ Mensaje editado:", mensaje._id);
   } catch (err) {
     //console.error("❌ Error al editar mensaje:", err);
     res.status(500).json({ msg: "Error al editar mensaje" });
@@ -138,7 +145,7 @@ exports.eliminarMensaje = async (req, res) => {
     io.to(conversacionId).emit("mensaje-eliminado", { _id: mensajeId });
 
     res.json({ msg: "Mensaje eliminado", _id: mensajeId });
-   // console.log("🗑️ Mensaje eliminado:", mensajeId);
+    // console.log("🗑️ Mensaje eliminado:", mensajeId);
   } catch (err) {
     //console.error("❌ Error al eliminar mensaje:", err);
     res.status(500).json({ msg: "Error al eliminar mensaje" });
