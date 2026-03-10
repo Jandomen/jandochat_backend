@@ -429,6 +429,33 @@ exports.uploadPhoto = async (req, res) => {
   }
 };
 
+exports.uploadCoverPhoto = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    const user = await User.findById(userId);
+    if (user.fotoPortadaPublicId) {
+      await cloudinary.uploader.destroy(user.fotoPortadaPublicId);
+    }
+
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "portadas",
+      width: 1200,
+      height: 400,
+      crop: "fill",
+    });
+
+    user.fotoPortada = result.secure_url;
+    user.fotoPortadaPublicId = result.public_id;
+    await user.save();
+
+    res.json({ fotoPortada: user.fotoPortada });
+  } catch (error) {
+    res.status(500).json({ message: "Error subiendo la foto de portada" });
+  }
+};
+
 
 exports.deletePhoto = async (req, res) => {
   try {
@@ -450,6 +477,26 @@ exports.deletePhoto = async (req, res) => {
   } catch (error) {
     //console.error("Error al eliminar la foto de perfil:", error);
     res.status(500).json({ message: "Error eliminando foto" });
+  }
+};
+
+exports.deleteCoverPhoto = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    if (user.fotoPortadaPublicId) {
+      await cloudinary.uploader.destroy(user.fotoPortadaPublicId);
+    }
+
+    user.fotoPortada = "";
+    user.fotoPortadaPublicId = "";
+    await user.save();
+
+    res.json({ message: "Foto de portada eliminada" });
+  } catch (error) {
+    res.status(500).json({ message: "Error eliminando foto de portada" });
   }
 };
 

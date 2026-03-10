@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   fotoPerfil: { type: String, default: "" },
   fotoPublicId: { type: String, default: "" },
+  fotoPortada: { type: String, default: "" },
+  fotoPortadaPublicId: { type: String, default: "" },
   bio: { type: String, default: "" },
   ubicacion: { type: String, default: "" },
   sitioWeb: { type: String, default: "" },
