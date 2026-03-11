@@ -6,6 +6,14 @@ const socketNotification = require("../sockets/socketNotification");
 const enviarNotiSocial = async (receptor, emisor, tipo, mensaje, publicacionId = null, comentarioId = null) => {
     if (receptor.toString() === emisor.toString()) return;
     try {
+        // Check for blocks
+        const userReceptor = await User.findById(receptor).select("bloqueados");
+        const userEmisor = await User.findById(emisor).select("bloqueados");
+
+        if (userReceptor.bloqueados.includes(emisor) || userEmisor.bloqueados.includes(receptor)) {
+            return;
+        }
+
         const noti = new Notification({ receptor, emisor, tipo, mensaje, publicacion: publicacionId, comentarioId });
         await noti.save();
         const io = socketNotification.getIO();
@@ -37,9 +45,19 @@ exports.createPost = async (req, res) => {
 exports.getFeed = async (req, res) => {
     try {
         const userId = req.user._id;
-        const user = await User.findById(userId).select("siguiendo");
+        // Get user with following and blocked lists
+        const user = await User.findById(userId).select("siguiendo bloqueados");
         const siguiendoIds = user.siguiendo || [];
-        const targetIds = [...siguiendoIds, userId];
+        const bloqueadosIds = user.bloqueados || [];
+
+        // Find users who have blocked current user
+        const usersWhoBlockedMe = await User.find({ bloqueados: userId }).select("_id");
+        const whoBlockedMeIds = usersWhoBlockedMe.map(u => u._id.toString());
+
+        // Target IDs are following + self, MINUS those I blocked and those who blocked me
+        const targetIds = [...siguiendoIds, userId]
+            .filter(id => !bloqueadosIds.map(b => b.toString()).includes(id.toString()))
+            .filter(id => !whoBlockedMeIds.includes(id.toString()));
 
         const posts = await Post.find({ usuario: { $in: targetIds } })
             .populate("usuario", "nombre fotoPerfil username")

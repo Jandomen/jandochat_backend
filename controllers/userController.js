@@ -530,7 +530,20 @@ exports.bloquearUsuario = async (req, res) => {
     }
 
     user.bloqueados.push(id);
+    
+    // Auto-unfollow logic: remove the blocked user from my following/followers
+    user.siguiendo = user.siguiendo.filter(uid => uid.toString() !== id);
+    user.seguidores = user.seguidores.filter(uid => uid.toString() !== id);
+    
     await user.save();
+
+    // Remove me from the blocked user's following/followers
+    await User.findByIdAndUpdate(id, {
+      $pull: { 
+        siguiendo: userId,
+        seguidores: userId
+      }
+    });
 
     res.json({ msg: "Usuario bloqueado correctamente." });
     // console.log(`Usuario ${userId} bloqueó a ${id}`);

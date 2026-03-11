@@ -62,9 +62,18 @@ exports.getStoriesFeed = async (req, res) => {
         // Archive expired stories for current user
         await archivarExpiradas(userId);
 
-        const user = await User.findById(userId).select("siguiendo");
+        const user = await User.findById(userId).select("siguiendo bloqueados");
         const siguiendoIds = user.siguiendo || [];
-        const targetIds = [...siguiendoIds, userId];
+        const bloqueadosIds = user.bloqueados || [];
+
+        // Find users who have blocked current user
+        const usersWhoBlockedMe = await User.find({ bloqueados: userId }).select("_id");
+        const whoBlockedMeIds = usersWhoBlockedMe.map(u => u._id.toString());
+
+        // Filter targetIds excluding blocks
+        const targetIds = [...siguiendoIds, userId]
+            .filter(id => !bloqueadosIds.map(b => b.toString()).includes(id.toString()))
+            .filter(id => !whoBlockedMeIds.includes(id.toString()));
 
         const stories = await Story.find({
             usuario: { $in: targetIds },
