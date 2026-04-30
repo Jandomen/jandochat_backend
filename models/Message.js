@@ -8,7 +8,8 @@ const messageSchema = new mongoose.Schema(
     media: [
       {
         url: String,
-        tipo: { type: String, enum: ["imagen", "video"] }
+        tipo: { type: String, enum: ["imagen", "video", "audio", "documento"] },
+        nombre: String
       }
     ],
   },

@@ -24,6 +24,11 @@ function socketChat(ioInstance) {
       }
     });
 
+    socket.on("join", (conversacionId) => {
+        // console.log(`Socket ${socket.id} se unió explícitamente a la conversación ${conversacionId}`);
+        socket.join(conversacionId);
+    });
+
     socket.on("mensaje", async (msg) => {
       try {
         const nuevoMensaje = new Message({

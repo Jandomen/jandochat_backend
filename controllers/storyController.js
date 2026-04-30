@@ -47,6 +47,13 @@ exports.crearStory = async (req, res) => {
 
         await story.save();
         const populated = await story.populate("usuario", "nombre fotoPerfil username");
+
+        // Real-time broadcast
+        const io = req.app.get("io");
+        if (io) {
+            io.emit("nuevaHistoria", populated);
+        }
+
         res.status(201).json(populated);
     } catch (error) {
         console.error("Error al crear story:", error);
@@ -209,6 +216,13 @@ exports.deleteStory = async (req, res) => {
         }
 
         await story.deleteOne();
+
+        // Real-time broadcast
+        const io = req.app.get("io");
+        if (io) {
+            io.emit("eliminarHistoria", id);
+        }
+
         res.json({ msg: "Historia eliminada" });
     } catch (error) {
         console.error("Error al eliminar story:", error);
