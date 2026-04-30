@@ -10,6 +10,19 @@ const postSchema = new mongoose.Schema({
         type: String,
         required: false,
     },
+    titulo: {
+        type: String,
+        default: "",
+    },
+    categoria: {
+        type: String,
+        default: "general",
+    },
+    visibilidad: {
+        type: String,
+        enum: ["público", "seguidores", "privado"],
+        default: "público"
+    },
     media: [
         {
             url: String,
@@ -29,11 +42,25 @@ const postSchema = new mongoose.Schema({
     comentarios: [
         {
             usuario: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-            texto: { type: String, required: true },
+            texto: { type: String, required: false },
+            media: [
+                {
+                    url: String,
+                    tipo: { type: String, enum: ["imagen", "video", "audio"] }
+                }
+            ],
+            mentions: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
             respuestas: [
                 {
                     usuario: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-                    texto: { type: String, required: true },
+                    texto: { type: String, required: false },
+                    media: [
+                        {
+                            url: String,
+                            tipo: { type: String, enum: ["imagen", "video", "audio"] }
+                        }
+                    ],
+                    mentions: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
                     createdAt: { type: Date, default: Date.now },
                 }
             ],
@@ -49,10 +76,20 @@ const postSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    contenidoCompartir: { // El comentario que el usuario agrega al compartir
+    contenidoCompartir: {
         type: String,
         default: "",
     },
+    vistas: {
+        type: Number,
+        default: 0,
+    },
+    mentions: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        }
+    ],
     createdAt: {
         type: Date,
         default: Date.now,

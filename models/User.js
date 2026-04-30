@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs')
 
 const userSchema = new mongoose.Schema({
   nombre: { type: String, required: true },
+  username: { type: String, unique: true, sparse: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   fotoPerfil: { type: String, default: "" },
@@ -23,7 +24,16 @@ const userSchema = new mongoose.Schema({
   storySettings: {
     autoArchive: { type: Boolean, default: true },
     visibility: { type: String, enum: ["todos", "seguidores", "nadie"], default: "todos" }
-  }
+  },
+  guardados: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
+  status: { type: String, enum: ["activo", "suspendido", "restringido"], default: "activo" },
+  suspension: {
+    isSuspended: { type: Boolean, default: false },
+    motivo: { type: String, default: "" },
+    hasta: { type: Date, default: null }
+  },
+  idioma: { type: String, default: "es" },
+  lastActive: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 userSchema.methods.comparePassword = async function (candidatePassword) {

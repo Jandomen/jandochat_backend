@@ -3,11 +3,12 @@ const Notification = require("../models/Notification");
 const Conversation = require("../models/Conversation");
 const socketNotification = require("../sockets/socketNotification");
 const User = require("../models/User");
+const cloudinary = require("../config/cloudinary");
 
 
 exports.crearMensaje = async (req, res) => {
   try {
-    const { contenido, conversacion, media } = req.body;
+    const { contenido, conversacion } = req.body;
     const emisorId = req.user._id;
 
     const conv = await Conversation.findById(conversacion).populate("participantes", "_id nombre bloqueados");
@@ -36,11 +37,35 @@ exports.crearMensaje = async (req, res) => {
       return res.status(403).json({ msg: "No puedes enviar mensajes debido a bloqueo entre usuarios." });
     }
 
+    let mediaArr = [];
+    if (req.files && req.files.length > 0) {
+      mediaArr = await Promise.all(req.files.map(async (f) => {
+        const b64 = Buffer.from(f.buffer).toString("base64");
+        const dataURI = "data:" + f.mimetype + ";base64," + b64;
+        
+        let resCloud;
+        if (f.mimetype.startsWith("audio/")) {
+            resCloud = await cloudinary.uploader.upload(dataURI, { resource_type: "raw", folder: "jandochat/messages" });
+            return { url: resCloud.secure_url, tipo: "audio", nombre: f.originalname };
+        } else if (f.mimetype.startsWith("video/")) {
+            resCloud = await cloudinary.uploader.upload(dataURI, { resource_type: "video", folder: "jandochat/messages" });
+            return { url: resCloud.secure_url, tipo: "video", nombre: f.originalname };
+        } else if (f.mimetype.startsWith("image/")) {
+            resCloud = await cloudinary.uploader.upload(dataURI, { folder: "jandochat/messages" });
+            return { url: resCloud.secure_url, tipo: "imagen", nombre: f.originalname };
+        } else {
+            // General files / PDF
+            resCloud = await cloudinary.uploader.upload(dataURI, { resource_type: "raw", folder: "jandochat/messages" });
+            return { url: resCloud.secure_url, tipo: "documento", nombre: f.originalname };
+        }
+      }));
+    }
+
     const nuevoMensaje = new Message({
       contenido,
       emisor: emisorId,
       conversacion,
-      media: media || [],
+      media: mediaArr,
     });
 
     await nuevoMensaje.save();

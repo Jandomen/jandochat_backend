@@ -5,19 +5,28 @@ const sanitizeHtml = require('sanitize-html');
 const cloudinary = require("../config/cloudinary");
 const Notification = require("../models/Notification");
 const socketNotification = require("../sockets/socketNotification");
+const Report = require("../models/Report");
 
 
 
 
 exports.register = async (req, res) => {
   try {
-    const { nombre, email, password } = req.body;
-
+    const { nombre, email, password, username } = req.body;
+    
     const existe = await User.findOne({ email });
     if (existe) return res.status(400).json({ msg: "El usuario ya existe" });
 
+    // Generar un username si no viene uno
+    const finalUsername = username || nombre.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random() * 1000);
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const nuevoUsuario = new User({ nombre, email, password: hashedPassword });
+    const nuevoUsuario = new User({ 
+      nombre, 
+      email, 
+      password: hashedPassword,
+      username: finalUsername
+    });
 
     await nuevoUsuario.save();
 
@@ -255,18 +264,28 @@ exports.getUserById = async (req, res) => {
 exports.getUsuariosAleatorios = async (req, res) => {
   try {
     const userId = req.user.id;
+    const usuarioActual = await User.findById(userId).select("siguiendo bloqueados");
+    if (!usuarioActual) return res.status(404).json({ error: "Usuario no encontrado" });
 
-    const usuarioActual = await User.findById(userId).select("bloqueados");
+    const misSeguidos = usuarioActual.siguiendo || [];
+    const misBloqueados = usuarioActual.bloqueados || [];
 
+    // Find users who have blocked me
+    const whoBlockedMe = await User.find({ bloqueados: userId }).select("_id");
+    const whoBlockedMeIds = whoBlockedMe.map(u => u._id);
 
-    const usuarios = await User.aggregate([
+    const exclusionList = [...misSeguidos, ...misBloqueados, ...whoBlockedMeIds, userId];
+
+    const sugerencias = await User.aggregate([
+      { $match: { siguiendo: { $in: misSeguidos }, _id: { $nin: exclusionList } } },
       {
-        $match: {
-          _id: { $ne: userId, $nin: usuarioActual.bloqueados },
-          bloqueados: { $ne: userId },
-        },
+        $addFields: {
+          amigosEnComun: { $setIntersection: ["$siguiendo", misSeguidos] }
+        }
       },
-      { $sample: { size: 10 } },
+      { $addFields: { count: { $size: "$amigosEnComun" } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
       {
         $project: {
           _id: 1,
@@ -274,29 +293,44 @@ exports.getUsuariosAleatorios = async (req, res) => {
           username: 1,
           fotoPerfil: 1,
           seguidores: 1,
-        },
-      },
+          count: 1,
+          amigosEnComun: 1
+        }
+      }
     ]);
 
-    res.json(usuarios);
-    // console.log("Usuarios aleatorios obtenidos:", usuarios);
+    if (sugerencias.length < 3) {
+      const aleatorios = await User.aggregate([
+        { $match: { _id: { $nin: exclusionList }, bloqueados: { $ne: userId } } },
+        { $sample: { size: 10 - sugerencias.length } },
+        { $project: { _id: 1, nombre: 1, username: 1, fotoPerfil: 1, seguidores: 1 } }
+      ]);
+      return res.json([...sugerencias, ...aleatorios]);
+    }
+
+    res.json(sugerencias);
   } catch (err) {
-    // console.error("Error al obtener usuarios aleatorios:", err);
-    res.status(500).json({ error: "Error al obtener usuarios aleatorios" });
+    res.status(500).json({ error: "Error al obtener sugerencias" });
   }
 };
 
 
 
 exports.actualizarPerfil = async (req, res) => {
-  const { nombre, passwordActual, passwordNueva, bio, ubicacion, sitioWeb } = req.body;
+  const { nombre, username, passwordActual, passwordNueva, bio, ubicacion, sitioWeb, idioma } = req.body;
   const userId = req.user.id;
 
   try {
     const usuario = await User.findById(userId);
     if (!usuario) {
-      // console.log(`Usuario ${userId} intentó actualizar su perfil pero no existe.`);
       return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+    }
+
+    if (username && username !== usuario.username) {
+      const sanitizedUsername = username.toLowerCase().replace(/[^a-z0-9_]/g, '');
+      const existe = await User.findOne({ username: sanitizedUsername, _id: { $ne: userId } });
+      if (existe) return res.status(400).json({ mensaje: 'El nombre de usuario ya está en uso' });
+      usuario.username = sanitizedUsername;
     }
 
     if (nombre && nombre !== usuario.nombre) {
@@ -306,7 +340,6 @@ exports.actualizarPerfil = async (req, res) => {
       });
 
       if (!sanitizedNombre) {
-        // console.log(`Usuario ${userId} intentó actualizar su perfil con un nombre vacío.`);
         return res.status(400).json({ mensaje: 'El nombre no puede estar vacío' });
       }
 
@@ -316,7 +349,6 @@ exports.actualizarPerfil = async (req, res) => {
         (ahora - usuario.ultimaModificacionNombre) >= 15 * 24 * 60 * 60 * 1000;
 
       if (!puedeCambiarNombre) {
-        // console.log(`Usuario ${userId} intentó cambiar su nombre antes de 15 días.`);
         return res.status(400).json({ mensaje: 'Solo puedes cambiar tu nombre cada 15 días' });
       }
 
@@ -325,7 +357,6 @@ exports.actualizarPerfil = async (req, res) => {
         _id: { $ne: userId },
       });
       if (nombreExistente) {
-        //console.log(`Usuario ${userId} intentó actualizar su perfil con un nombre ya existente: ${sanitizedNombre}`);
         return res.status(400).json({ mensaje: 'Ese nombre ya está en uso' });
       }
 
@@ -335,11 +366,9 @@ exports.actualizarPerfil = async (req, res) => {
 
     if (passwordActual && passwordNueva) {
       if (passwordNueva.length < 8) {
-        // console.log(`Usuario ${userId} intentó actualizar su perfil con una contraseña corta.`);
         return res.status(400).json({ mensaje: 'La nueva contraseña debe tener al menos 8 caracteres' });
       }
       if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(passwordNueva)) {
-        // console.log(`Usuario ${userId} intentó actualizar su perfil con una contraseña débil.`);
         return res.status(400).json({
           mensaje: 'La contraseña debe incluir mayúsculas, minúsculas, números y caracteres especiales',
         });
@@ -347,7 +376,6 @@ exports.actualizarPerfil = async (req, res) => {
 
       const coincide = await bcrypt.compare(passwordActual, usuario.password);
       if (!coincide) {
-        // console.log(`Usuario ${userId} intentó actualizar su perfil con una contraseña incorrecta.`);
         return res.status(401).json({ mensaje: 'Contraseña actual incorrecta' });
       }
 
@@ -364,8 +392,9 @@ exports.actualizarPerfil = async (req, res) => {
     if (bio !== undefined) usuario.bio = bio;
     if (ubicacion !== undefined) usuario.ubicacion = ubicacion;
     if (sitioWeb !== undefined) usuario.sitioWeb = sitioWeb;
+    if (idioma !== undefined) usuario.idioma = idioma;
 
-    if (!nombre && (!passwordActual || !passwordNueva) && !req.body.configuracionStatus && bio === undefined && ubicacion === undefined && sitioWeb === undefined) {
+    if (!nombre && (!passwordActual || !passwordNueva) && !req.body.configuracionStatus && bio === undefined && ubicacion === undefined && sitioWeb === undefined && idioma === undefined) {
       return res.status(400).json({ mensaje: 'Debes proporcionar al menos un campo para actualizar' });
     }
 
@@ -374,9 +403,11 @@ exports.actualizarPerfil = async (req, res) => {
     res.json({
       mensaje: 'Perfil actualizado correctamente',
       nombre: usuario.nombre,
+      username: usuario.username,
       bio: usuario.bio,
       ubicacion: usuario.ubicacion,
       sitioWeb: usuario.sitioWeb,
+      idioma: usuario.idioma,
       createdAt: usuario.createdAt
     });
 
@@ -530,16 +561,16 @@ exports.bloquearUsuario = async (req, res) => {
     }
 
     user.bloqueados.push(id);
-    
+
     // Auto-unfollow logic: remove the blocked user from my following/followers
     user.siguiendo = user.siguiendo.filter(uid => uid.toString() !== id);
     user.seguidores = user.seguidores.filter(uid => uid.toString() !== id);
-    
+
     await user.save();
 
     // Remove me from the blocked user's following/followers
     await User.findByIdAndUpdate(id, {
-      $pull: { 
+      $pull: {
         siguiendo: userId,
         seguidores: userId
       }
@@ -710,12 +741,51 @@ exports.obtenerSeguidores = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate("seguidores", "nombre username fotoPerfil");
     res.json(user.seguidores);
-    // console.log("Seguidores obtenidos:", user.seguidores);
   } catch (error) {
-    // console.error("Error obteniendo seguidores:", error);
     res.status(500).json({ msg: "Error del servidor." });
   }
 };
+
+exports.reportUsuario = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { motivo, detalles } = req.body;
+
+    if (userId === id) {
+      return res.status(400).json({ msg: "No puedes reportarte a ti mismo." });
+    }
+
+    const reportado = await User.findById(id);
+    if (!reportado) return res.status(404).json({ msg: "Usuario no encontrado." });
+
+    const nuevoReporte = new Report({
+      emisor: userId,
+      usuarioReportado: id,
+      motivo: motivo || "Comportamiento inapropiado",
+      detalles: detalles || ""
+    });
+
+    await nuevoReporte.save();
+
+    // Contar reportes
+    const conteo = await Report.countDocuments({ usuarioReportado: id });
+    if (conteo >= 50 && reportado.status !== "suspendido") {
+      reportado.status = "suspendido";
+      reportado.suspension = {
+        isSuspended: true,
+        motivo: "Exceso de reportes de la comunidad (50+)",
+        hasta: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+      };
+      await reportado.save();
+    }
+
+    res.status(201).json({ msg: "Reporte enviado a la administración." });
+  } catch (error) {
+    res.status(500).json({ msg: "Error al reportar usuario." });
+  }
+};
+
 
 
 
