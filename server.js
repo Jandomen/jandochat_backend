@@ -45,6 +45,7 @@ app.use("/api/posts", require("./routes/postRoutes"));
 app.use("/api/upload", require("./routes/uploadRoutes"));
 app.use("/api/stories", require("./routes/storyRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
+app.use("/api/caja-fuerte", require("./routes/safeNoteRoutes"));
 
 // Admin Genesis Seed
 const seedAdmin = async () => {
